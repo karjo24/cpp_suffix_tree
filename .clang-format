@@ -1,0 +1,23 @@
+Language: Cpp
+
+BasedOnStyle: LLVM
+
+AlignAfterOpenBracket: DontAlign
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: true
+BreakBeforeBraces: Attach
+AlwaysBreakTemplateDeclarations: Yes
+IndentCaseLabels: true
+IndentWidth: 4
+NamespaceIndentation: None
+BinPackParameters: false
+BreakInheritanceList: BeforeComma
+BreakConstructorInitializers: BeforeColon
+Cpp11BracedListStyle: true
+SpaceBeforeCpp11BracedList: false
+SpaceInEmptyBlock: false
+IndentExternBlock: NoIndent
+ColumnLimit: 120
+IncludeCategories:
+  - Regex: '.*'
+    Priority: 1
