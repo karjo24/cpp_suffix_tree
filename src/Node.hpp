@@ -9,19 +9,45 @@
 namespace suffixtrees {
     class Node {
         std::array<std::unique_ptr<Node>, 5> children;
-        struct Label {
-            const std::string_view& str_view;
-            std::size_t start, end;
-            Label(const std::string_view& view, std::size_t start, std::size_t end) : str_view(view), start(start), end(end) {}
-        };
-        Label label;
+    std::string_view label;
 
     public:
-        Node(const std::string_view& str_view, std::size_t start, std::size_t end) : label(str_view, start, end) {};
+    explicit Node(const std::string_view str_view) : label(str_view) {
+    };
 
         Node(const Node &) = delete;
         Node &operator=(const Node &) = delete;
-        Node(Node && other) = delete;
+        Node(Node &&other) = delete;
         Node &operator=(Node &&) = delete;
+
+    template <typename... Args>
+    Node &constructChild(const char c, Args... args) {
+        const std::size_t idx = _charMap[c];
+        children[idx] = std::make_unique<Node>(std::forward<Args>(args)...);
+        return *children[idx];
+    }
+
+    Node *getChild(const char c) const {
+        return children[_charMap[c]].get();
+    }
+
+    std::unique_ptr<Node> extractChild(const char c) {
+        return std::move(children[_charMap[c]]);
+    }
+
+    void insertChild(const char c, std::unique_ptr<Node> &&child) {
+        children[_charMap[c]] = std::move(child);
+    }
+
+    const std::string_view &getLabel() const {
+        return label;
+    }
+
+    void trimLabeltoSuffix(std::size_t start) {
+        label = label.substr(start);
+    }
+
+private:
+    static inline std::unordered_map<char, std::size_t> _charMap = {{'A', 0}, {'T', 1}, {'G', 2}, {'C', 3}, {'$', 4}};
     };
 } // suffixtrees

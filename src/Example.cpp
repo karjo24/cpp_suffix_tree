@@ -5,6 +5,7 @@
 
 int main()
 {
-    suffixtrees::SuffixTree tree("");
+    std::string s = "GAGCTAG$";
+    suffixtrees::SuffixTree tree(s);
     return 0;
 }
