@@ -3,8 +3,7 @@
 //
 #include "SuffixTree.hpp"
 
-int main()
-{
+int main() {
     std::string s = "GAGCTAG$";
     suffixtrees::SuffixTree tree(s);
     return 0;

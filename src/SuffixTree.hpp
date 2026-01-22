@@ -30,7 +30,7 @@ public:
                 if (pair.first != child->getLabel().end()) {
                     break;
                 }
-                 }
+            }
 
             // if split: determine split position, update child label, construct new node, move old child into new node child, leave if block with curr_child pointing to newly created split node
             if (child != nullptr && pair.first != child->getLabel().end()) {
