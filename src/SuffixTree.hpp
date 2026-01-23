@@ -18,26 +18,26 @@ class SuffixTree {
             auto suffix_it = str_it;
 
             Node *curr_node, *child;
-            decltype(std::mismatch(curr_node->getLabel().begin(), curr_node->getLabel().end(), suffix_it)) pair;
+            decltype(std::mismatch(curr_node->label.begin(), curr_node->label.end(), suffix_it)) pair;
             for (curr_node = root.get(), child = curr_node->getChild(*str_it); child != nullptr;
                  curr_node = child, child = curr_node->getChild(*suffix_it)) {
-                pair = std::mismatch(child->getLabel().begin(), child->getLabel().end(), suffix_it);
-                suffix_it += std::distance(child->getLabel().begin(), pair.first);
-                if (pair.first != child->getLabel().end()) {
+                pair = std::mismatch(child->label.begin(), child->label.end(), suffix_it);
+                suffix_it += std::distance(child->label.begin(), pair.first);
+                if (pair.first != child->label.end()) {
                     break;
                 }
             }
 
             // if split: determine split position, update child label, construct new node, move old child into new node child, leave if block with curr_child pointing to newly created split node
-            if (child != nullptr && pair.first != child->getLabel().end()) {
-                std::size_t splitPos = std::distance(child->getLabel().begin(), pair.first);
-                char childIndex = *child->getLabel().begin();
+            if (child != nullptr && pair.first != child->label.end()) {
+                std::size_t splitPos = std::distance(child->label.begin(), pair.first);
+                char childIndex = *child->label.begin();
                 std::unique_ptr<NodeT> oldChild = curr_node->extractChild(childIndex);
                 oldChild->trimLabeltoSuffix(splitPos);
                 Node &newNode = curr_node->
                     constructChild(childIndex, std::string_view(suffix_it - splitPos, suffix_it));
 
-                newNode.insertChild(*oldChild->getLabel().begin(), std::move(oldChild));
+                newNode.insertChild(*oldChild->label.begin(), std::move(oldChild));
                 curr_node = &newNode;
             }
             // regardless of split: construct new node as child of curr_node with label of [suffix_it,...]

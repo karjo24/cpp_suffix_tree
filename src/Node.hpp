@@ -7,7 +7,10 @@
 #include <unordered_map>
 
 namespace suffixtrees {
+class SuffixTree;
+
 class Node {
+    friend class SuffixTree;
     std::array<std::unique_ptr<Node>, 5> children;
     std::string_view label;
 
@@ -37,10 +40,6 @@ public:
 
     void insertChild(const char c, std::unique_ptr<Node> &&child) {
         children[_charMap[c]] = std::move(child);
-    }
-
-    const std::string_view &getLabel() const {
-        return label;
     }
 
     void trimLabeltoSuffix(std::size_t start) {
