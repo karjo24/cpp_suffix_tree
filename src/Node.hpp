@@ -13,10 +13,10 @@ class Node {
     friend class SuffixTree;
     std::array<std::unique_ptr<Node>, 5> children;
     std::string_view label;
+    Node *suffixLink;
 
 public:
-    explicit Node(const std::string_view str_view) : label(str_view) {
-    };
+    explicit Node(const std::string_view str_view) : label(str_view), suffixLink(this) {}
 
     Node(const Node &) = delete;
     Node &operator=(const Node &) = delete;
