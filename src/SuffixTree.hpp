@@ -185,5 +185,30 @@ public:
     SuffixTree(SuffixTree &&) = delete;
 
     SuffixTree &operator=(SuffixTree &&) = delete;
+
+    /**
+ * Search for occurrence of sequence [first, last) in string that is owned by this suffix tree
+ * @tparam It Iterator type of the view
+ * @param first Iterator to start of sequence to search for
+ * @param last Iterator to end of sequence [first,last)
+ * @return bool indicating if the sequence was found in text
+ */
+    template <typename It>
+    bool search(It first, It last) {
+        Node *currentNode = root.get();
+        std::size_t totalDistance = 0;
+        std::pair pair = std::make_pair(first, str_view.begin());
+        while (first != last) {
+            if (!Node::_charMap.contains(*first)) return false;
+            // TODO refactor into sth more elegant once child container is refactored
+            Node *child = currentNode->getChild(*first);
+            if (child == nullptr) return false;
+            pair = std::mismatch(first, last, child->label.begin(), child->label.end());
+            if (pair.first != last && pair.second != child->label.end()) return false;
+            totalDistance += std::distance(first, pair.first);
+            first = pair.first;
+        }
+        return true;
+    }
 };
 } // suffixtrees
