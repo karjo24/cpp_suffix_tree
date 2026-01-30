@@ -97,8 +97,8 @@ class SuffixTree {
             const std::size_t distanceFromEnd = std::distance(prefix_end_it, str_view.end());
             std::size_t posOnEdge = str_view.length() - distanceFromEnd;
 
-            // Sketchy, but okay: suffix_of_prefix_it one-past-the-end-iterator at maximum and never dereferenced, TODO
-            for (std::size_t j = 0; j < str_view.length(); ++j) {
+            std::size_t oldJ = 0;
+            for (std::size_t j = oldJ; j < str_view.length(); ++j) {
                 /** Phase j
                  *  At the start of each phase j, the variables represent the following:
                  *      prefix_end_it: Iterator to the T[i+1], which is used for each extension
@@ -127,6 +127,7 @@ class SuffixTree {
 
                     if (curr_node->getChild(*prefix_end_it)) {
                         // Rule 3: String implicitly in tree, break
+                        oldJ = j;
                         break;
                     } else {
                         // Rule 2: Split by creating new child node
@@ -142,6 +143,7 @@ class SuffixTree {
                 } else {
                     if (child->label[posOnEdge] == *prefix_end_it) {
                         // Rule 3: String implicitly in tree, break
+                        oldJ = j;
                         break;
                     }
                     // Rule 2: Split by splitting an edge
