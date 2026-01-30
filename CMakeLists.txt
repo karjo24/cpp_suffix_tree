@@ -18,7 +18,6 @@ FetchContent_MakeAvailable(googletest)
 # -------Example usage---------
 add_compile_options(-Wall -Wextra)
 add_executable(suffix_tree_example src/Example.cpp)
-target_link_libraries(suffix_tree_example GTest::gtest_main)
 
 # -------Tests---------
 add_executable(tests tests/TestsSuffixTree.cpp)
