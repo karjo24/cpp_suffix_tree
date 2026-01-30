@@ -187,28 +187,29 @@ public:
     SuffixTree &operator=(SuffixTree &&) = delete;
 
     /**
- * Search for occurrence of sequence [first, last) in string that is owned by this suffix tree
- * @tparam It Iterator type of the view
- * @param first Iterator to start of sequence to search for
- * @param last Iterator to end of sequence [first,last)
- * @return bool indicating if the sequence was found in text
- */
+     * Search for occurrence of sequence [first, last) in string that is owned by this suffix tree
+     * TODO not yet usable in a sensible way (therefore private for now). Returns an iterator to start of occurrence of pattern in text, which is a view of the private member string owned by the suffix tree rendering the returned iterator relatively useless
+     * @tparam It Iterator type of the view
+     * @param first Iterator to start of sequence to search for
+     * @param last Iterator to end of sequence [first,last)
+     * @return Iterator to start of occurrence in text or end iterator of text if not found
+     */
     template <typename It>
-    bool search(It first, It last) {
+    It search(It first, It last) {
         Node *currentNode = root.get();
         std::size_t totalDistance = 0;
         std::pair pair = std::make_pair(first, str_view.begin());
         while (first != last) {
-            if (!Node::_charMap.contains(*first)) return false;
+            if (!Node::_charMap.contains(*first)) return str_view.end();
             // TODO refactor into sth more elegant once child container is refactored
             Node *child = currentNode->getChild(*first);
-            if (child == nullptr) return false;
+            if (child == nullptr) return str_view.end();
             pair = std::mismatch(first, last, child->label.begin(), child->label.end());
-            if (pair.first != last && pair.second != child->label.end()) return false;
+            if (pair.first != last && pair.second != child->label.end()) return str_view.end();
             totalDistance += std::distance(first, pair.first);
             first = pair.first;
         }
-        return true;
+        return pair.second - totalDistance;
     }
 };
 } // suffixtrees
