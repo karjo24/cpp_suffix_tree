@@ -210,6 +210,7 @@ public:
             if (pair.first != last && pair.second != child->label.end()) return false;
             totalDistance += std::distance(first, pair.first);
             first = pair.first;
+            currentNode = child;
         }
         return true;
     }
