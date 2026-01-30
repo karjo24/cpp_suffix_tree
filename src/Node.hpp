@@ -14,9 +14,11 @@ class Node {
     std::array<std::unique_ptr<Node>, 5> children;
     std::string_view label;
     Node *suffixLink;
+    const std::size_t suffixIndex = 0;
 
 public:
     explicit Node(const std::string_view str_view) : label(str_view), suffixLink(this) {}
+    Node(const std::string_view str_view, const std::size_t suffixIndex) : label(str_view), suffixLink(this), suffixIndex(suffixIndex) {}
 
     Node(const Node &) = delete;
     Node &operator=(const Node &) = delete;

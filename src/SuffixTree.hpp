@@ -15,7 +15,8 @@ class SuffixTree {
     std::unique_ptr<NodeT> root;
 
     void naiveConstruction() {
-        for (auto str_it = str_view.begin(); str_it != str_view.end(); ++str_it) {
+        std::size_t j = 0;
+        for (auto str_it = str_view.begin(); str_it != str_view.end(); ++str_it, ++j) {
             auto suffix_it = str_it;
 
             Node *curr_node, *child;
@@ -42,7 +43,7 @@ class SuffixTree {
                 curr_node = &newNode;
             }
             // regardless of split: construct new node as child of curr_node with label of [suffix_it,...]
-            curr_node->constructChild(*suffix_it, std::string_view(suffix_it, str_view.end()));
+            curr_node->constructChild(*suffix_it, std::string_view(suffix_it, str_view.end()), j);
         }
     }
 
@@ -87,7 +88,7 @@ class SuffixTree {
      */
     void ukkonenConstruction() {
         assert(!str_view.empty());
-        root->constructChild(*str_view.begin(), str_view);
+        root->constructChild(*str_view.begin(), str_view, 0);
 
         auto start = str_view.begin();
         for (auto prefix_end_it = ++start; prefix_end_it != str_view.end(); ++prefix_end_it) {
@@ -130,7 +131,7 @@ class SuffixTree {
                     } else {
                         // Rule 2: Split by creating new child node
                         child = &curr_node->constructChild(*prefix_end_it,
-                            std::string_view(prefix_end_it, str_view.end()));
+                            std::string_view(prefix_end_it, str_view.end()), j);
                         suffix_link_pending = nullptr;
                     }
                 } else if (child->label.end() == str_view.end() && (child->label.length() - posOnEdge) ==
@@ -149,7 +150,7 @@ class SuffixTree {
                     // Create new node at split and new leaf as its child
                     Node &newNode = curr_node->
                         constructChild(oldChildIndex, oldChild->label.substr(0, posOnEdge));
-                    newNode.constructChild(*prefix_end_it, std::string_view(prefix_end_it, str_view.end()));
+                    newNode.constructChild(*prefix_end_it, std::string_view(prefix_end_it, str_view.end()), j);
                     oldChild->trimLabeltoSuffix(posOnEdge);
 
                     // Move old child to child of newly created node
