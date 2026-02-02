@@ -6,6 +6,7 @@
 
 namespace suffixtrees {
 class SuffixTree {
+    friend class SuffixTreeConstruction_ConstructionAlgorithmEquality_Test;
     using NodeT = Node;
     using StringT = std::string;
     using CharT = std::string::value_type;
@@ -53,7 +54,6 @@ class SuffixTree {
      * @param start Iterator to walk down along
      * @param skipCount Skip skipCount chars
      * @param start_node Node which to start descent from
-     * @param distanceFromEnd True leaf length in current phase must be leaf.length() - distanceFromEnd
      * @return first value: pointer to closest inner node above end of tree descent\n
      *      second value: nullptr if descent ends exactly on inner node, else: pointer to closest node below end of tree descent\n
      *      third value: 0 if descent ends exactly on inner node, else: position of end of descent relative to edge label
@@ -61,20 +61,14 @@ class SuffixTree {
     template <typename It>
     std::tuple<Node *, Node *, std::size_t> skipWalkDown(It start,
         const std::size_t skipCount,
-        Node *start_node,
-        const std::size_t distanceFromEnd) {
+        Node *start_node) {
         Node *curr_node = start_node;
 
         std::size_t advance;
         for (std::size_t i = 0; i < skipCount; i += advance) {
             Node *child = curr_node->getChild(*start);
-            // Optimization: Leaf labels are complete at any point in the algorithm to avoid explicit extensions;
-            // Tradeoff: label.length() doesn't reflect true length in case of leafs
-            const std::size_t labelLength = child->label.length();
-            std::size_t trueLabelLength =
-                child->label.end() != str_view.end() ? labelLength : labelLength - distanceFromEnd;
-            advance = std::min(skipCount - i, trueLabelLength);
-            if (advance < trueLabelLength || child->label.end() == str_view.end()) {
+            advance = std::min(skipCount - i, child->label.length());
+            if (advance < child->label.length()) {
                 return std::make_tuple(curr_node, child, advance);
             }
             std::advance(start, advance);
@@ -88,37 +82,31 @@ class SuffixTree {
      */
     void ukkonenConstruction() {
         assert(!str_view.empty());
-        root->constructChild(*str_view.begin(), str_view, 0);
+        Node *curr_node = root.get(), *child = root.get(), *suffix_link_pending = nullptr;
+        std::size_t posOnEdge = 0;
+        std::size_t jInitializer = 0;
+        bool moveForward = false;
 
-        auto start = str_view.begin();
-        for (auto prefix_end_it = ++start; prefix_end_it != str_view.end(); ++prefix_end_it) {
+        for (std::size_t i = 0; i < str_view.length(); ++i) {
             // Phase i
-            Node *curr_node = root.get(), *child = root->getChild(*str_view.begin()), *suffix_link_pending = nullptr;
-            const std::size_t distanceFromEnd = std::distance(prefix_end_it, str_view.end());
-            std::size_t posOnEdge = str_view.length() - distanceFromEnd;
+            auto prefix_end_it = str_view.begin() + i;
 
-            std::size_t oldJ = 0;
-            for (std::size_t j = oldJ; j < str_view.length(); ++j) {
-                /** Phase j
-                 *  At the start of each phase j, the variables represent the following:
-                 *      prefix_end_it: Iterator to the T[i+1], which is used for each extension
-                 *      curr_node: The closest (inner) node above the end point of the previous iteration already containing a suffix link
-                 *      child: The closest node below the end point of the previous iteration
-                 *      posOnEdge: End position of j-1 iteration relative to label if j > 0; Absolute position of end of prefix of whole string if j == 0
-                 *      distanceFromEnd: current "true" leaf label length of each leaf is label.length() - distanceFromEnd; Context: Leaf labels are constructed containing a whole suffix to avoid explicit leaf extensions.
-                 */
-
+            for (std::size_t j = jInitializer; j <= i; ++j) {
                 std::string_view &gamma = child->label;
 
                 auto start = gamma.begin();
                 std::size_t skipCount = posOnEdge;
-                if (curr_node == root.get() && j != 0) {
-                    ++start;
-                    if (skipCount > 0) --skipCount;
+                Node *startNode = curr_node;
+
+                if (moveForward) {
+                    startNode = curr_node->suffixLink;
+                    if (curr_node == root.get()) {
+                        if (skipCount > 0) --skipCount; // TODO this should never be triggered if skipCount is 0; test that it actually doesn't (except in first iteration?)
+                        ++start;
+                    }
                 }
 
-                auto walkDownInformation = skipWalkDown(start, skipCount, curr_node->suffixLink,
-                    distanceFromEnd); // basically step 2 of SEA
+                auto walkDownInformation = skipWalkDown(start, skipCount, startNode); // basically step 2 of SEA
 
                 std::tie(curr_node, child, posOnEdge) = walkDownInformation;
 
@@ -127,26 +115,33 @@ class SuffixTree {
 
                     if (curr_node->getChild(*prefix_end_it)) {
                         // Rule 3: String implicitly in tree, break
-                        oldJ = j;
+                        ++posOnEdge;
+                        child = curr_node->getChild(*prefix_end_it);
+                        moveForward = false;
+                        suffix_link_pending = nullptr;
                         break;
                     } else {
                         // Rule 2: Split by creating new child node
+                        ++jInitializer;
+                        moveForward = true;
                         child = &curr_node->constructChild(*prefix_end_it,
                             std::string_view(prefix_end_it, str_view.end()), j);
                         suffix_link_pending = nullptr;
                     }
-                } else if (child->label.end() == str_view.end() && (child->label.length() - posOnEdge) ==
-                           distanceFromEnd) {
-                    // Rule 1: Extend leaf
-                    // Implicit extension: Leafs are always created with the label reaching the end
-                    suffix_link_pending = nullptr;
                 } else {
                     if (child->label[posOnEdge] == *prefix_end_it) {
                         // Rule 3: String implicitly in tree, break
-                        oldJ = j;
+                        posOnEdge = (posOnEdge + 1) % child->label.length(); // TODO update curr_node???
+                        if (posOnEdge == 0) {
+                            curr_node = child;
+                        }
+                        moveForward = false;
+                        suffix_link_pending = nullptr;
                         break;
                     }
                     // Rule 2: Split by splitting an edge
+                    ++jInitializer;
+                    moveForward = true;
                     char oldChildIndex = *child->label.begin();
                     std::unique_ptr<NodeT> oldChild = curr_node->extractChild(oldChildIndex);
                     // Create new node at split and new leaf as its child
