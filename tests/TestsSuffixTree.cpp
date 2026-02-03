@@ -5,13 +5,28 @@
 
 using namespace suffixtrees;
 
+auto testSearchEquality = [](const SuffixTree &tree,
+    const std::string_view &haystackView,
+    const std::string_view &patternView) {
+    auto stdLibrarySearch = std::ranges::search(haystackView, patternView).begin();
+    bool foundByStd = stdLibrarySearch != haystackView.end();
+    std::size_t posStd = std::distance(haystackView.begin(), stdLibrarySearch);
+
+    auto suffixTreeSearch = tree.search(patternView.begin(), patternView.end());
+    bool foundBySuffixtree = suffixTreeSearch.first;
+    std::size_t posSuffixtree = suffixTreeSearch.second;
+
+    return (!foundByStd && !foundBySuffixtree) || (foundByStd && foundBySuffixtree && posStd == posSuffixtree);
+};
+
 TEST(SuffixTreeBehaviour, SearchBehaviourTruePositives) {
     std::string s("AAAGCTAGCTATTATTAAAAGCTAGCTAAACGAAGTAGCTATTATACGACGACTAAAAATCGACGACGATTATAAGCGATCAGTCGAAGCTAGT$");
     std::string_view v(s);
     SuffixTree tree(s, true);
-    for (auto start = v.begin(); start != v.end(); ++start) {
+    std::size_t j = 0;
+    for (auto start = v.begin(); start != v.end(); ++start, ++j) {
         for (auto end = start; end != v.end(); ++end) {
-            ASSERT_TRUE(tree.search(start, end));
+            ASSERT_TRUE(testSearchEquality(tree, v, std::string_view(start, end)));
         }
     }
 }
@@ -22,13 +37,6 @@ auto getRandomChar = [](const std::string &charPool, auto &dist, auto &gen) {
 };
 auto createRandomString = [](std::string &str, const std::string &charPool, auto &dist, auto &gen) {
     std::generate(str.begin(), str.end(), [&]() { return getRandomChar(charPool, dist, gen); });
-};
-auto testSearchEquality = [](const SuffixTree &tree,
-    const std::string_view &haystackView,
-    const std::string_view &patternView) {
-    bool stdLibrarySearch = std::ranges::search(haystackView, patternView).begin() != haystackView.end();
-    bool suffixTreeSearch = tree.search(patternView.begin(), patternView.end());
-    return stdLibrarySearch == suffixTreeSearch;
 };
 
 TEST(SuffixTreeBehaviour, SearchBehaviourFuzz) {
@@ -66,4 +74,45 @@ TEST(SuffixTreeBehaviour, SearchBehaviourFuzz) {
             }
         }
     }
+}
+
+#include <queue>
+#include <unordered_set>
+
+std::unordered_set childrenIndices({'A', 'T', 'G', 'C', '$'});
+
+namespace suffixtrees {
+TEST(SuffixTreeConstruction, ConstructionAlgorithmEquality) {
+    std::string s("AAAGCTAGCTATTATTAAAAGCTAGCTAAACGAAGTAGCTATTATACGACGACTAAAAATCGACGACGATTATAAGCGATCAGTCGAAGCTAGT$");
+    SuffixTree referenceTree(s, false);
+    SuffixTree tree(s, true);
+
+    std::queue<Node *> tq{};
+    std::queue<Node *> rtq{};
+    tq.push(tree.root.get());
+    rtq.push(tree.root.get());
+    std::size_t i = 0;
+
+    while (!tq.empty() && !rtq.empty()) {
+        Node *treeNode = tq.front();
+        tq.pop();
+        Node *refTreeNode = rtq.front();
+        rtq.pop();
+
+        for (auto &c : childrenIndices) {
+            Node *tChild = treeNode->getChild(c);
+            Node *rtChild = refTreeNode->getChild(c);
+            ASSERT_TRUE((!tChild && !rtChild) || tChild->label == rtChild->label);
+            if (tChild) {
+                if (tChild->label.back() == '$') ++i;
+                tq.push(tChild);
+            }
+            if (rtChild) {
+                rtq.push(rtChild);
+            }
+        }
+    }
+    ASSERT_TRUE(i == s.length()); // verify number of leafs of Ukkonen-constructed algorithm
+    ASSERT_TRUE(tq.empty() && rtq.empty());
+}
 }

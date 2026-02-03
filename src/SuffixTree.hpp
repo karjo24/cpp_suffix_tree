@@ -3,6 +3,7 @@
 #include "Node.hpp"
 #include <cassert>
 #include <memory>
+#include <random>
 
 namespace suffixtrees {
 class SuffixTree {
@@ -181,25 +182,25 @@ public:
  * @tparam It Iterator type of the view
  * @param first Iterator to start of sequence to search for
  * @param last Iterator to end of sequence [first,last)
- * @return bool indicating if the sequence was found in text
+ * @return pair of bool and size_t indicating if the sequence was found in text and if true, at which position in text
  */
     template <typename It>
-    bool search(It first, It last) {
-        Node *currentNode = root.get();
-        std::size_t totalDistance = 0;
+    std::pair<bool, std::size_t> search(It first, It last) const {
+        auto copyOfFirst = first;
+        const Node *currentNode = root.get();
         std::pair pair = std::make_pair(first, str_view.begin());
         while (first != last) {
-            if (!Node::_charMap.contains(*first)) return false;
             // TODO refactor into sth more elegant once child container is refactored
+            if (!Node::_charMap.contains(*first)) return {false, 0};
             Node *child = currentNode->getChild(*first);
-            if (child == nullptr) return false;
+            if (child == nullptr) return {false, 0};
             pair = std::mismatch(first, last, child->label.begin(), child->label.end());
-            if (pair.first != last && pair.second != child->label.end()) return false;
-            totalDistance += std::distance(first, pair.first);
+            if (pair.first != last && pair.second != child->label.end()) return {false, 0};
             first = pair.first;
             currentNode = child;
         }
-        return true;
+        std::size_t totalDistance = std::distance(copyOfFirst, last);
+        return {true, std::distance(str_view.begin(), pair.second) - totalDistance};
     }
 };
 } // suffixtrees

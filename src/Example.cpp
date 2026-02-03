@@ -11,10 +11,15 @@ int main() {
 
     std::string inText = "GCT";
     std::string notInText = "AAG";
-    bool isFound1 = tree.search(inText.begin(), inText.end());
-    bool isFound2 = tree.search(notInText.begin(), notInText.end());
-    std::println("Is string {} in text? {}", inText, isFound1);
-    std::println("Is string {} in text? {}", notInText, isFound2);
+    auto isFound1 = tree.search(inText.begin(), inText.end());
+    auto isFound2 = tree.search(notInText.begin(), notInText.end());
+
+    std::print("Is string {} in text? {}", inText, isFound1.first);
+    if (isFound1.first) std::println(", at position {}", isFound1.second);
+    else std::println("");
+    std::print("Is string {} in text? {}", notInText, isFound2.first);
+    if (isFound2.first) std::println(", at position {}", isFound2.second);
+    else std::println("");
 
     return 0;
 }
